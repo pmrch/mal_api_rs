@@ -73,6 +73,22 @@ impl super::models::NumEps {
     }
 }
 
+impl std::fmt::Display for super::models::ListStatusEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Completed => write!(f, "completed"),
+            Self::Dropped => write!(f, "dropped"),
+            Self::OnHold => write!(f, "on_hold"),
+            Self::PlanToWatch => write!(f, "plan_to_watch"),
+            Self::Watching => write!(f, "watching"),
+            Self::Unknown => {
+                tracing::warn!("Defaulting to completed. Invalid ListStatusEnum was provided: {self}");
+                write!(f, "completed")
+            }
+        }
+    }
+}
+
 impl super::models::EpLengthMins {
     #[must_use]
     pub fn matches(self, episode_len_secs: u32) -> bool {

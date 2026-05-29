@@ -28,4 +28,10 @@ pub enum Error {
 
     #[error("URL parse error: {0}")]
     UrlParse(#[from] url::ParseError),
+
+    #[error("This endpoint requires authentication via access token")]
+    Unauthenticated,
+
+    #[error("The response from the server was unsuccessful!")]
+    ResponseError,
 }

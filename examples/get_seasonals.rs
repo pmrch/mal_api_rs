@@ -1,4 +1,4 @@
-use mal_api_rs::prelude::models::SeasonEnum;
+use mal_api_rs::models::SeasonEnum;
 use mal_api_rs::{Anime, MalApi, Result};
 
 #[tokio::main]

@@ -1,6 +1,6 @@
+mod anime;
 mod filter;
 mod impls;
-mod anime;
 mod traits;
 
 pub(super) use traits::HasNode;
@@ -8,7 +8,7 @@ pub(super) use traits::HasNode;
 use super::helpers::matches_title;
 use super::requests;
 use crate::prelude::sync::Arc;
-use crate::prelude::{HashMap, HashSet, Result, my_hash_map};
+use crate::prelude::{Error, HashMap, HashSet, Result, my_hash_map};
 
 pub(super) mod endpoints {
     pub const ANIME_ENDPOINT: &str = "https://api.myanimelist.net/v2/anime";
@@ -23,8 +23,8 @@ mod models {
 }
 
 mod api {
-    pub(super) use crate::prelude::models::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData};
+    pub(super) use crate::models::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData};
 }
 
-pub use filter::SearchFilter;
 pub use anime::AnimeSearchBuilder;
+pub use filter::SearchFilter;

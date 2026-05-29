@@ -9,6 +9,6 @@ const DEFAULT_OFFSET: u32 = 0;
 
 pub use abstractions::{EpLengthMins, NumEps, SearchConfig, SearchMode, SortOrder};
 pub use api::{
-    AlternativeTitles, Anime, AnimeNode, AnimeQuery, AnimeRankingType, Broadcast, Genre, MainPicture, RankingQuery, RankingQueryData,
-    SeasonEnum, Status,
+    AlternativeTitles, Anime, AnimeNode, AnimeQuery, AnimeRankingType, Broadcast, Genre, ListStatus, ListStatusEnum, MainPicture,
+    RankingQuery, RankingQueryData, SeasonEnum, Status, UserAnimeListEdge, UserAnimeListQuery,
 };

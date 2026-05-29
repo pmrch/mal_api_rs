@@ -41,22 +41,24 @@ pub struct AnimeStudio {
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 pub struct ListStatus {
-    pub comments:             String,
-    pub is_rewatching:        bool,
-    pub num_episodes_watched: u32,
-    pub num_times_rewatched:  u32,
-    pub priority:             u32,
-    pub rewatch_value:        u32,
-    pub score:                OrderedFloat<f64>,
     pub status:               ListStatusEnum,
-    pub tags:                 serde_json::Value,
+    pub score:                u32,
+    pub num_episodes_watched: u32,
+    pub is_rewatching:        bool,
+    pub start_date:           Option<chrono::NaiveDate>,
+    pub finish_date:          Option<chrono::NaiveDate>,
+    pub priority:             u32,
+    pub num_times_rewatched:  u32,
+    pub rewatch_value:        u32,
+    pub tags:                 Vec<String>,
+    pub comments:             Option<String>,
     pub updated_at:           chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 pub struct UserAnimeListEdge {
     pub node:        AnimeNode,
-    pub list_status: ListStatus,
+    pub list_status: Option<ListStatus>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]

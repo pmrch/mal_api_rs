@@ -1,5 +1,5 @@
-use mal_api_rs::prelude::{MalApi, Result};
-use mal_api_rs::{AnimeNode, SortOrder};
+use mal_api_rs::SortOrder;
+use mal_api_rs::prelude::{MalApi, Result, AnimeNode};
 
 #[tokio::main]
 async fn main() -> Result<()> {

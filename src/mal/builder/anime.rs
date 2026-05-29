@@ -2,7 +2,7 @@ use super::api::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, R
 use super::endpoints::{ANIME_ENDPOINT, RANKING_ENDPOINT, SEASONAL_ENDPOINT, SUGGESTION_ENDPOINT};
 use super::models::{SearchConfig, SearchFilter, SearchMode, SeasonEnum, SortOrder};
 use super::requests::{Client, Response, Url};
-use super::{Arc, HasNode, HashMap, HashSet, Result, matches_title, my_hash_map};
+use super::{Arc, Error, HasNode, HashMap, HashSet, Result, matches_title, my_hash_map};
 
 pub struct AnimeSearchBuilder<'a> {
     client:        Arc<Client>,
@@ -27,12 +27,6 @@ impl<'a> AnimeSearchBuilder<'a> {
         }
     }
 
-    /// Set the limit of anime per page
-    pub const fn limit(mut self, limit: u32) -> Self {
-        self.config.limit = limit;
-        self
-    }
-
     /// Set the similarity threshold for title comparison with query
     pub const fn threshold(mut self, threshold: f64) -> Self {
         self.config.threshold = threshold;
@@ -48,6 +42,12 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// Set the number of matches you wish to receive
     pub const fn number_of_titles(mut self, num_titles: usize) -> Self {
         self.config.num_titles = num_titles;
+        self
+    }
+
+    /// Set the limit of anime per page
+    pub const fn limit(mut self, limit: u32) -> Self {
+        self.config.limit = limit;
         self
     }
 
@@ -97,11 +97,15 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(ANIME_ENDPOINT, query_params)?;
         let response: Response = self.client.get(url).send().await?;
+        if !response.status().is_success() {
+            return Err(Error::ResponseError);
+        }
+
         let mut target_query: HashSet<AnimeNode> = HashSet::with_capacity(self.config.num_titles);
         let mut pages_without_match: usize = 0;
 
-        let resp_text: String = response.text().await?;
-        let mut response: AnimeQuery = serde_json::from_str(&resp_text)?;
+        let resp_val: serde_json::Value = response.json().await?;
+        let mut response: AnimeQuery = serde_json::from_value(resp_val)?;
 
         loop {
             for entry in response.data {
@@ -140,9 +144,14 @@ impl<'a> AnimeSearchBuilder<'a> {
                 break;
             };
 
-            response = self.client.get(url_maybe_last).send().await?.json::<AnimeQuery>().await?;
-            pages_without_match += 1;
+            let resp: Response = self.client.get(url_maybe_last).send().await?;
+            if !resp.status().is_success() {
+                tracing::error!("An error response was received for a page");
+                break;
+            }
 
+            response = resp.json::<AnimeQuery>().await?;
+            pages_without_match += 1;
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         }
 
@@ -159,6 +168,10 @@ impl<'a> AnimeSearchBuilder<'a> {
         let url: Url = Url::parse_with_params(&format!("{ANIME_ENDPOINT}/{anime_id}"), &[("fields", &new_fields.join(","))])?;
 
         let resp: Response = self.client.get(url).send().await?;
+        if !resp.status().is_success() {
+            return Err(Error::ResponseError);
+        }
+
         Ok(resp.json::<Anime>().await?.node)
     }
 
@@ -177,9 +190,13 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(RANKING_ENDPOINT, query_params)?;
         let resp: Response = self.client.get(url).send().await?;
-        let resp_txt: String = resp.text().await?;
+        if !resp.status().is_success() {
+            return Err(Error::ResponseError);
+        }
 
-        let mut query_data: Vec<RankingQueryData> = serde_json::from_str::<RankingQuery>(&resp_txt)?.data;
+        let resp_val: serde_json::Value = resp.json().await?;
+        let mut query_data: Vec<RankingQueryData> = serde_json::from_value::<RankingQuery>(resp_val)?.data;
+
         query_data.retain(|d| self.search_filter.as_ref().is_none_or(|f| f.matches(&d.node, &self.search_mode)));
         self.sort_vec(&mut query_data);
 
@@ -199,9 +216,13 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(&format!("{SEASONAL_ENDPOINT}/{year}/{season}"), query_params)?;
         let resp: Response = self.client.get(url).send().await?;
-        let resp_text: String = resp.text().await?;
+        if !resp.status().is_success() {
+            return Err(Error::ResponseError);
+        }
 
-        let mut query_results: Vec<Anime> = serde_json::from_str::<AnimeQuery>(&resp_text)?.data;
+        let resp_val: serde_json::Value = resp.json().await?;
+        let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
+
         query_results.retain(|r| self.search_filter.as_ref().is_none_or(|f| f.matches(r.node(), &self.search_mode)));
         self.sort_vec(&mut query_results);
 
@@ -214,8 +235,7 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// Results are filtered and sorted according to builder configuration.
     pub async fn suggestions(&self) -> Result<Vec<Anime>> {
         if self.access_token.is_none() {
-            tracing::warn!("Returning empty Vec for the suggestion endpoint, auth token was not provided");
-            return Ok(vec![]);
+            return Err(Error::Unauthenticated);
         }
 
         let new_fields: Vec<&str> = self.build_fields();
@@ -227,11 +247,13 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(SUGGESTION_ENDPOINT, query_params)?;
         let resp: reqwest::Response = self.client.get(url).send().await?;
-        let resp_text: String = resp.text().await?;
+        if !resp.status().is_success() {
+            return Err(Error::ResponseError);
+        }
 
-        println!("{resp_text:#?}");
+        let resp_val: serde_json::Value = resp.json().await?;
+        let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
 
-        let mut query_results: Vec<Anime> = serde_json::from_str::<AnimeQuery>(&resp_text)?.data;
         query_results.retain(|r| self.search_filter.as_ref().is_none_or(|f| f.matches(r.node(), &self.search_mode)));
         self.sort_vec(&mut query_results);
 

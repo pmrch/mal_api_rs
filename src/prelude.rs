@@ -1,4 +1,4 @@
-use super::error::Error;
+pub use super::error::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -8,5 +8,6 @@ pub mod sync {
 
 pub use std::collections::{HashMap, HashSet};
 
-pub use crate::mal::{MalApi, NumEps, SearchFilter, SortOrder, models};
+pub use crate::mal::models::{AlternativeTitles, Anime, AnimeNode, UserAnimeListEdge};
+pub use crate::mal::{MalApi, NumEps, SearchFilter, SortOrder};
 pub use crate::my_hash_map;
