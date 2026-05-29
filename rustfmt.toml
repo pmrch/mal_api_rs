@@ -1,0 +1,16 @@
+max_width = 135
+wrap_comments = true
+single_line_if_else_max_width = 70
+single_line_let_else_max_width = 70
+fn_single_line = true
+where_single_line = true
+empty_item_single_line = true
+struct_lit_single_line = true
+reorder_imports = true
+reorder_modules = true
+imports_granularity = "Module"
+group_imports = "StdExternalCrate"
+merge_imports = true
+enum_discrim_align_threshold = 40
+struct_field_align_threshold = 40
+format_strings = true
