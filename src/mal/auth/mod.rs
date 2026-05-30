@@ -1,7 +1,6 @@
 mod anime;
 mod auth_models;
 mod impls;
-mod manga;
 mod update;
 
 pub use anime::UserAnimeBuilder;
