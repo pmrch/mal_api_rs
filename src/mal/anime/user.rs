@@ -1,7 +1,7 @@
 use super::config::UserAnimeConfig;
 use super::custom::{QuerySort, SearchMode};
 use super::models::{ListStatus, ListStatusEnum, UserAnimeListEdge, UserAnimeListQuery};
-use super::{Arc, Client, Error, HashMap, Response, Result, SearchFilter, UpdateBuilder, Url};
+use super::{Arc, Client, Error, HashMap, Response, Result, SearchFilter, UpdateBuilder, Url, check_response};
 
 const ANIME_ENDPOINT: &str = "https://api.myanimelist.net/v2/anime";
 const USERS_ENDPOINT: &str = "https://api.myanimelist.net/v2/users";
@@ -70,10 +70,22 @@ impl UserAnimeBuilder {
         self
     }
 
+    /// Retrieve the anime list of a MAL user.
+    ///
+    /// If `user_name` is `None`, defaults to the authenticated user's list
+    /// (`@me`). Requires authentication when fetching `@me`.
+    ///
+    /// Filters set via [`UserAnimeBuilder::filter`] are applied client-side
+    /// after fetching.
+    ///
+    /// # Errors
+    /// - [`Error::Unauthenticated`] if no access token is set and `user_name`
+    ///   is `None`
+    /// - [`Error::ResponseError`] if MAL returns a non-success status code
     pub async fn get(&self, user_name: Option<&str>) -> Result<Vec<UserAnimeListEdge>> {
         let uname: &str = user_name.unwrap_or(SELF_LIST);
         if uname == SELF_LIST && self.access_token.is_none() {
-            return Err(Error::Unauthenticated);
+            return Err(Error::Unauthorized);
         }
 
         let url_string: String = format!("{USERS_ENDPOINT}/{uname}/animelist");
@@ -89,33 +101,103 @@ impl UserAnimeBuilder {
 
         let url: Url = Url::parse_with_params(&url_string, query_params)?;
         let resp: Response = self.client.get(url).send().await?;
-        if !resp.status().is_success() {
-            return Err(Error::ResponseError);
-        }
+        check_response(resp.status())?;
 
         let resp_val: serde_json::Value = resp.json().await?;
         let mut query_results: Vec<UserAnimeListEdge> = serde_json::from_value::<UserAnimeListQuery>(resp_val)?.data;
-        query_results.retain(|d| self.filter.as_ref().is_none_or(|f| f.matches(&d.node, &self.search_mode)));
 
+        tracing::info!(
+            user = %uname,
+            results = %query_results.len(),
+            filtered = %(self.filter.is_some()),
+            "User anime list fetched successfully"
+        );
+
+        query_results.retain(|d| self.filter.as_ref().is_none_or(|f| f.matches(&d.node, &self.search_mode)));
         Ok(query_results)
     }
 
-    pub async fn update(&self, anime_id: u32, builder: UpdateBuilder, return_update: bool) -> Result<Option<ListStatus>> {
+    /// Update an anime entry on the authenticated user's MAL list.
+    ///
+    /// Only fields explicitly set on the [`UpdateBuilder`] will be modified,
+    /// all other fields remain unchanged on MAL's side.
+    ///
+    /// # Errors
+    /// - [`Error::Unauthenticated`] if no access token is set
+    /// - [`Error::ResponseError`] if MAL returns a non-success status code
+    pub async fn update(&self, anime_id: u32, builder: UpdateBuilder) -> Result<()> {
+        self.update_inner(anime_id, builder).await?;
+        tracing::info!(
+            anime_id = %anime_id,
+            "Anime list entry updated successfully"
+        );
+
+        Ok(())
+    }
+
+    /// Update an anime entry and return the updated [`ListStatus`] from MAL.
+    ///
+    /// Identical to [`UserAnimeBuilder::update`] but deserializes and returns
+    /// the updated list status from MAL's response.
+    ///
+    /// # Errors
+    /// - [`Error::Unauthenticated`] if no access token is set
+    /// - [`Error::ResponseError`] if MAL returns a non-success status code
+    pub async fn update_and_return(&self, anime_id: u32, builder: UpdateBuilder) -> Result<ListStatus> {
+        let new_status: ListStatus = self.update_inner(anime_id, builder).await?;
+        tracing::info!(
+            anime_id = %anime_id,
+            new_status = %new_status.status,
+            new_score = %new_status.score,
+            "Anime list entry updated successfully"
+        );
+
+        Ok(new_status)
+    }
+
+    async fn update_inner(&self, anime_id: u32, builder: UpdateBuilder) -> Result<ListStatus> {
         if self.access_token.is_none() {
-            return Err(Error::Unauthenticated);
+            return Err(Error::Unauthorized);
         }
 
         let url_string: String = format!("{ANIME_ENDPOINT}/{anime_id}/my_list_status");
         let url: Url = Url::parse(&url_string)?;
 
         let resp: Response = self.client.put(url).form(&builder.into_params()).send().await?;
-        if !resp.status().is_success() {
-            return Err(Error::ResponseError);
-        }
+        tracing::info!(
+            anime_id = %anime_id,
+            "List entry update request sent"
+        );
 
+        check_response(resp.status())?;
         let resp_val: serde_json::Value = resp.json().await?;
         let new_status: ListStatus = serde_json::from_value(resp_val)?;
 
-        if return_update { Ok(Some(new_status)) } else { Ok(None) }
+        Ok(new_status)
+    }
+
+    /// Delete an anime entry from the authenticated user's MAL list.
+    ///
+    /// This action is irreversible — the entry will be permanently removed
+    /// from the user's list on MAL.
+    ///
+    /// # Errors
+    /// - [`Error::Unauthenticated`] if no access token is set
+    /// - [`Error::ResponseError`] if MAL returns a non-success status code
+    pub async fn delete(&self, anime_id: u32) -> Result<()> {
+        let url_string: String = format!("{ANIME_ENDPOINT}/{anime_id}/my_list_status");
+        if self.access_token.is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url: Url = Url::parse(&url_string)?;
+        let resp: Response = self.client.delete(url).send().await?;
+        check_response(resp.status())?;
+        tracing::info!(
+            anime_id = %anime_id,
+            "Anime list entry deleted successfully"
+        );
+
+        Ok(())
     }
 }

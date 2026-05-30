@@ -1,4 +1,5 @@
 max_width = 135
+chain_width = 120
 wrap_comments = true
 single_line_if_else_max_width = 70
 single_line_let_else_max_width = 70

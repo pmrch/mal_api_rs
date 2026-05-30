@@ -7,7 +7,7 @@ use reqwest::{Client, Response};
 use update::UpdateBuilder;
 use url::Url;
 
-use super::helpers::matches_title;
+use super::helpers::{check_response, matches_title};
 use super::shared::filter::SearchFilter;
 use super::shared::traits::HasNode;
 use super::shared::{api as models, models as custom};

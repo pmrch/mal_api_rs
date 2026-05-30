@@ -1,8 +1,9 @@
 use mal_api_rs::SortOrder;
-use mal_api_rs::prelude::{MalApi, Result, AnimeNode};
+use mal_api_rs::prelude::{AnimeNode, MalApi, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).init();
     dotenv::dotenv()?;
     let client_id: String = std::env::var("CLIENT_ID")?;
     let api: MalApi = MalApi::new(None, &client_id)?;

@@ -1,7 +1,7 @@
 use super::custom::{SearchConfig, SearchMode, SortOrder};
 use super::endpoints::{ANIME_ENDPOINT, RANKING_ENDPOINT, SEASONAL_ENDPOINT, SUGGESTION_ENDPOINT};
 use super::models::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData, SeasonEnum};
-use super::{Arc, Client, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url, matches_title};
+use super::{Arc, Client, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url, check_response, matches_title};
 
 pub struct AnimeSearchBuilder<'a> {
     client:        Arc<Client>,
@@ -96,9 +96,7 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(ANIME_ENDPOINT, query_params)?;
         let response: Response = self.client.get(url).send().await?;
-        if !response.status().is_success() {
-            return Err(Error::ResponseError);
-        }
+        check_response(response.status())?;
 
         let mut target_query: HashSet<AnimeNode> = HashSet::with_capacity(self.config.num_titles);
         let mut pages_without_match: usize = 0;
@@ -108,10 +106,7 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         loop {
             for entry in response.data {
-                let filter_matches: bool = self
-                    .search_filter
-                    .as_ref()
-                    .is_none_or(|f| f.matches(&entry.node, &self.search_mode));
+                let filter_matches: bool = self.search_filter.as_ref().is_none_or(|f| f.matches(&entry.node, &self.search_mode));
 
                 if matches_title(&entry.node, title, self.config.threshold) && filter_matches {
                     pages_without_match = 0;
@@ -144,7 +139,7 @@ impl<'a> AnimeSearchBuilder<'a> {
             };
 
             let resp: Response = self.client.get(url_maybe_last).send().await?;
-            if !resp.status().is_success() {
+            if check_response(resp.status()).is_err() {
                 tracing::error!("An error response was received for a page");
                 break;
             }
@@ -167,10 +162,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         let url: Url = Url::parse_with_params(&format!("{ANIME_ENDPOINT}/{anime_id}"), &[("fields", &new_fields.join(","))])?;
 
         let resp: Response = self.client.get(url).send().await?;
-        if !resp.status().is_success() {
-            return Err(Error::ResponseError);
-        }
-
+        check_response(resp.status())?;
         Ok(resp.json::<Anime>().await?.node)
     }
 
@@ -189,9 +181,7 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(RANKING_ENDPOINT, query_params)?;
         let resp: Response = self.client.get(url).send().await?;
-        if !resp.status().is_success() {
-            return Err(Error::ResponseError);
-        }
+        check_response(resp.status())?;
 
         let resp_val: serde_json::Value = resp.json().await?;
         let mut query_data: Vec<RankingQueryData> = serde_json::from_value::<RankingQuery>(resp_val)?.data;
@@ -215,9 +205,7 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(&format!("{SEASONAL_ENDPOINT}/{year}/{season}"), query_params)?;
         let resp: Response = self.client.get(url).send().await?;
-        if !resp.status().is_success() {
-            return Err(Error::ResponseError);
-        }
+        check_response(resp.status())?;
 
         let resp_val: serde_json::Value = resp.json().await?;
         let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
@@ -234,7 +222,7 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// Results are filtered and sorted according to builder configuration.
     pub async fn suggestions(&self) -> Result<Vec<Anime>> {
         if self.access_token.is_none() {
-            return Err(Error::Unauthenticated);
+            return Err(Error::Unauthorized);
         }
 
         let new_fields: Vec<&str> = self.build_fields();
@@ -246,9 +234,7 @@ impl<'a> AnimeSearchBuilder<'a> {
 
         let url: Url = Url::parse_with_params(SUGGESTION_ENDPOINT, query_params)?;
         let resp: reqwest::Response = self.client.get(url).send().await?;
-        if !resp.status().is_success() {
-            return Err(Error::ResponseError);
-        }
+        check_response(resp.status())?;
 
         let resp_val: serde_json::Value = resp.json().await?;
         let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;

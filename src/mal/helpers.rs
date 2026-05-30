@@ -1,6 +1,8 @@
 use chrono::NaiveDate;
 use serde::Deserialize;
 
+use super::{Error, Result};
+
 pub(super) fn is_relevant(title: impl Into<String>, query: &str, threshold: f64) -> bool {
     strsim::jaro_winkler(&title.into().to_lowercase(), &query.to_lowercase()) >= threshold
 }
@@ -28,7 +30,7 @@ pub(super) fn matches_title(node: &super::models::AnimeNode, title: &str, thresh
     (is_relevant(title, &node.title, threshold) && words_match) || (is_alternative_title && words_match_alt)
 }
 
-pub(super) fn deserialize_date<'de, D>(deserializer: D) -> Result<Option<chrono::NaiveDate>, D::Error>
+pub(super) fn deserialize_date<'de, D>(deserializer: D) -> std::result::Result<Option<chrono::NaiveDate>, D::Error>
 where D: serde::Deserializer<'de> {
     let s: Option<String> = Option::deserialize(deserializer)?;
     if let Some(date_str) = s {
@@ -45,5 +47,16 @@ where D: serde::Deserializer<'de> {
         Ok(Some(parsed))
     } else {
         Ok(None)
+    }
+}
+
+pub(super) fn check_response(status: reqwest::StatusCode) -> Result<()> {
+    match status {
+        s if s.is_success() => Ok(()),
+        reqwest::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
+        reqwest::StatusCode::NOT_FOUND => Err(Error::NotFound),
+        reqwest::StatusCode::TOO_MANY_REQUESTS => Err(Error::RateLimited),
+        s if s.is_server_error() => Err(Error::ServerError(s)),
+        s => Err(Error::ResponseError(s)),
     }
 }

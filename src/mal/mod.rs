@@ -1,10 +1,9 @@
 mod anime;
 mod api;
 mod helpers;
-//pub mod models;
 mod shared;
 
-use crate::prelude::{Result, sync};
+use crate::prelude::{Error, Result, sync};
 
 pub mod requests {
     pub use reqwest::header::{HeaderMap, HeaderValue};

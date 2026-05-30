@@ -29,9 +29,18 @@ pub enum Error {
     #[error("URL parse error: {0}")]
     UrlParse(#[from] url::ParseError),
 
-    #[error("This endpoint requires authentication via access token")]
-    Unauthenticated,
+    #[error("Unauthorized: invalid or missing access token")]
+    Unauthorized, // 401
 
-    #[error("The response from the server was unsuccessful!")]
-    ResponseError,
+    #[error("Resource not found")]
+    NotFound, // 404
+
+    #[error("Rate limit exceeded, slow down")]
+    RateLimited, // 429
+
+    #[error("MAL server error: {0}")]
+    ServerError(reqwest::StatusCode), // 5xx
+
+    #[error("Unexpected status code: {0}")]
+    ResponseError(reqwest::StatusCode), // everything else
 }
