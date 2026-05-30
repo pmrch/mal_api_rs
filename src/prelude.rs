@@ -8,6 +8,6 @@ pub mod sync {
 
 pub use std::collections::{HashMap, HashSet};
 
-pub use crate::mal::models::{AlternativeTitles, Anime, AnimeNode, UserAnimeListEdge};
-pub use crate::mal::{MalApi, NumEps, SearchFilter, SortOrder};
+pub use crate::mal::models::{AlternativeTitles, Anime, AnimeNode, NumEps, SortOrder, UserAnimeListEdge};
+pub use crate::mal::{MalApi, SearchFilter};
 pub use crate::my_hash_map;

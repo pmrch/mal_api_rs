@@ -1,5 +1,5 @@
-use super::api::AnimeNode;
 use super::models::{EpLengthMins, NumEps, SearchMode};
+use super::api::AnimeNode;
 
 // A filter is just a function that takes an AnimeNode and returns bool
 type AnimePredicate = Box<dyn Fn(&AnimeNode) -> bool + Send + Sync>;

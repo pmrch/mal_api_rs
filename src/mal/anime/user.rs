@@ -1,8 +1,9 @@
-use super::auth_models::{QuerySort, UserAnimeConfig};
-use super::models::{ListStatus, ListStatusEnum, SearchMode, UserAnimeListEdge, UserAnimeListQuery};
-use super::requests::{Client, Response, Url};
-use super::{ANIME_ENDPOINT, Arc, Error, HashMap, Result, SearchFilter, UpdateBuilder, my_hash_map};
+use super::config::UserAnimeConfig;
+use super::custom::{QuerySort, SearchMode};
+use super::models::{ListStatus, ListStatusEnum, UserAnimeListEdge, UserAnimeListQuery};
+use super::{Arc, Client, Error, HashMap, Response, Result, SearchFilter, UpdateBuilder, Url};
 
+const ANIME_ENDPOINT: &str = "https://api.myanimelist.net/v2/anime";
 const USERS_ENDPOINT: &str = "https://api.myanimelist.net/v2/users";
 const SELF_LIST: &str = "@me";
 
@@ -76,7 +77,7 @@ impl UserAnimeBuilder {
         }
 
         let url_string: String = format!("{USERS_ENDPOINT}/{uname}/animelist");
-        let mut query_params: HashMap<&str, compact_str::CompactString> = my_hash_map! {
+        let mut query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "sort" => self.config.sort,
             "limit" => self.config.limit,
             "offset" => self.config.offset

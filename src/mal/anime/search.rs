@@ -1,8 +1,7 @@
-use super::api::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData};
+use super::custom::{SearchConfig, SearchMode, SortOrder};
 use super::endpoints::{ANIME_ENDPOINT, RANKING_ENDPOINT, SEASONAL_ENDPOINT, SUGGESTION_ENDPOINT};
-use super::models::{SearchConfig, SearchFilter, SearchMode, SeasonEnum, SortOrder};
-use super::requests::{Client, Response, Url};
-use super::{Arc, Error, HasNode, HashMap, HashSet, Result, matches_title, my_hash_map};
+use super::models::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData, SeasonEnum};
+use super::{Arc, Client, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url, matches_title};
 
 pub struct AnimeSearchBuilder<'a> {
     client:        Arc<Client>,
@@ -87,7 +86,7 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// number of titles, threshold, page limit
     pub async fn search(&self, title: &'a str) -> Result<Vec<AnimeNode>> {
         let new_fields: Vec<&str> = self.build_fields();
-        let query_params: HashMap<&str, compact_str::CompactString> = my_hash_map! {
+        let query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "q" => title,
             "offset" => self.config.first_page_offset,
             "limit" => self.config.limit,
@@ -181,7 +180,7 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// This endpoint returns the top ranked animes
     pub async fn ranking(&self, ranking_type: AnimeRankingType) -> Result<Vec<RankingQueryData>> {
         let new_fields: Vec<&str> = self.build_fields();
-        let query_params: HashMap<&str, compact_str::CompactString> = my_hash_map! {
+        let query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "ranking_type" => ranking_type.as_ref(),
             "fields" => &new_fields.join(","),
             "limit" => self.config.limit,
@@ -208,7 +207,7 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// Results are filtered and sorted according to builder configuration.
     pub async fn seasonal(&self, year: u16, season: SeasonEnum) -> Result<Vec<Anime>> {
         let new_fields: Vec<&str> = self.build_fields();
-        let query_params: HashMap<&str, compact_str::CompactString> = my_hash_map! {
+        let query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "limit" => self.config.limit,
             "offset" => self.config.first_page_offset,
             "fields" => &new_fields.join(",")
@@ -239,7 +238,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         }
 
         let new_fields: Vec<&str> = self.build_fields();
-        let query_params: HashMap<&str, compact_str::CompactString> = my_hash_map! {
+        let query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "limit" => self.config.limit,
             "offset" => self.config.first_page_offset,
             "fields" => &new_fields.join(",")

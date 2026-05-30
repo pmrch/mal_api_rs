@@ -5,7 +5,7 @@ pub(super) fn is_relevant(title: impl Into<String>, query: &str, threshold: f64)
     strsim::jaro_winkler(&title.into().to_lowercase(), &query.to_lowercase()) >= threshold
 }
 
-pub(super) fn matches_title(node: &super::AnimeNode, title: &str, threshold: f64) -> bool {
+pub(super) fn matches_title(node: &super::models::AnimeNode, title: &str, threshold: f64) -> bool {
     let title: String = title.to_lowercase();
     let words: Vec<&str> = title.split_whitespace().collect();
     let query_title_lower: String = node.title.to_lowercase();

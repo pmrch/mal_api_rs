@@ -34,6 +34,16 @@ pub enum SortOrder {
     Rank,
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum QuerySort {
+    ListScore,
+    ListUpdatedAt,
+    #[default]
+    AnimeTitle,
+    AnimeStartDate,
+    AnimeId,
+}
+
 /// Between(min, max) - inclusive range. If min > max, they'll be swapped.
 #[derive(Debug, Clone, Copy)]
 pub enum NumEps {

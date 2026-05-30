@@ -1,20 +1,22 @@
+mod anime;
 mod api;
-mod auth;
-mod builder;
 mod helpers;
-mod impls;
-pub mod models;
+//pub mod models;
+mod shared;
 
 use crate::prelude::{Result, sync};
 
 pub mod requests {
     pub use reqwest::header::{HeaderMap, HeaderValue};
     pub use reqwest::redirect::Policy;
-    pub use reqwest::{Client, ClientBuilder, Response};
-    pub use url::Url;
+    pub use reqwest::{Client, ClientBuilder};
 }
 
+pub use anime::{AnimeSearchBuilder, UserAnimeBuilder};
 pub use api::MalApi;
-pub use auth::{QuerySort, UserAnimeBuilder};
-pub use builder::{AnimeSearchBuilder, SearchFilter};
-pub use models::{AnimeNode, NumEps, SearchConfig, SearchMode, SortOrder};
+pub use shared::filter::SearchFilter;
+
+pub mod models {
+    pub use super::shared::api::{AlternativeTitles, Anime, AnimeNode, SeasonEnum, UserAnimeListEdge};
+    pub use super::shared::models::{NumEps, QuerySort, SearchConfig, SearchMode, SortOrder};
+}
