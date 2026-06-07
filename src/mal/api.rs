@@ -2,8 +2,15 @@ use super::requests::{Client, ClientBuilder, HeaderMap, HeaderValue, Policy};
 use super::sync::Arc;
 use super::{AnimeSearchBuilder, Result, UserAnimeBuilder};
 
+#[rustfmt::skip]
+#[cfg(feature = "user")]
+use super::get_user_info;
+
+#[cfg(feature = "user")]
+use super::models::UserInfo;
+
 pub struct MalApi {
-    client:       Arc<reqwest::Client>,
+    client:       Arc<Client>,
     access_token: Option<Arc<str>>,
 }
 
@@ -43,5 +50,15 @@ impl MalApi {
     #[must_use]
     pub fn user_anime(&self) -> UserAnimeBuilder {
         UserAnimeBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone))
+    }
+
+    #[cfg(feature = "user")]
+    /// This function retrives user informations based on user ID
+    ///
+    /// # Errors
+    /// - Returns an error if the URL failed to parse
+    /// - Returns an error if the request failed ore received error for status
+    pub async fn get_user(&self, user_id: usize) -> Result<UserInfo> {
+        get_user_info(&self.client, self.access_token.as_ref().map(Arc::clone), user_id).await
     }
 }
