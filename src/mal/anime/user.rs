@@ -1,7 +1,8 @@
 use super::config::UserAnimeConfig;
 use super::custom::{QuerySort, SearchMode};
+use super::helpers::check_response;
 use super::models::{ListStatus, ListStatusEnum, UserAnimeListEdge, UserAnimeListQuery};
-use super::{Arc, Client, Error, HashMap, Response, Result, SearchFilter, UpdateBuilder, Url, check_response};
+use super::{Arc, Client, Error, HashMap, Response, Result, SearchFilter, UpdateBuilder, Url};
 
 const ANIME_ENDPOINT: &str = "https://api.myanimelist.net/v2/anime";
 const USERS_ENDPOINT: &str = "https://api.myanimelist.net/v2/users";
@@ -84,10 +85,6 @@ impl UserAnimeBuilder {
     /// - [`Error::ResponseError`] if MAL returns a non-success status code
     pub async fn get(&self, user_name: Option<&str>) -> Result<Vec<UserAnimeListEdge>> {
         let uname: &str = user_name.unwrap_or(SELF_LIST);
-        if uname == SELF_LIST && self.access_token.is_none() {
-            return Err(Error::Unauthorized);
-        }
-
         let url_string: String = format!("{USERS_ENDPOINT}/{uname}/animelist");
         let mut query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "sort" => self.config.sort,
@@ -100,9 +97,17 @@ impl UserAnimeBuilder {
         }
 
         let url: Url = Url::parse_with_params(&url_string, query_params)?;
-        let resp: Response = self.client.get(url).send().await?;
-        check_response(resp.status())?;
+        let resp: Response = if let Some(token) = &self.access_token {
+            self.client.get(url).bearer_auth(token).send().await?
+        } else {
+            if uname == SELF_LIST {
+                return Err(Error::Unauthorized);
+            }
 
+            self.client.get(url).send().await?
+        };
+
+        check_response(resp.status())?;
         let resp_val: serde_json::Value = resp.json().await?;
         let mut query_results: Vec<UserAnimeListEdge> = serde_json::from_value::<UserAnimeListQuery>(resp_val)?.data;
 
@@ -156,14 +161,14 @@ impl UserAnimeBuilder {
     }
 
     async fn update_inner(&self, anime_id: u32, builder: UpdateBuilder) -> Result<ListStatus> {
-        if self.access_token.is_none() {
-            return Err(Error::Unauthorized);
-        }
-
         let url_string: String = format!("{ANIME_ENDPOINT}/{anime_id}/my_list_status");
         let url: Url = Url::parse(&url_string)?;
+        let resp: Response = if let Some(token) = &self.access_token {
+            self.client.put(url).form(&builder.into_params()).bearer_auth(token).send().await?
+        } else {
+            return Err(Error::Unauthorized);
+        };
 
-        let resp: Response = self.client.put(url).form(&builder.into_params()).send().await?;
         tracing::info!(
             anime_id = %anime_id,
             "List entry update request sent"
@@ -186,12 +191,13 @@ impl UserAnimeBuilder {
     /// - [`Error::ResponseError`] if MAL returns a non-success status code
     pub async fn delete(&self, anime_id: u32) -> Result<()> {
         let url_string: String = format!("{ANIME_ENDPOINT}/{anime_id}/my_list_status");
-        if self.access_token.is_none() {
-            return Err(Error::Unauthorized);
-        }
-
         let url: Url = Url::parse(&url_string)?;
-        let resp: Response = self.client.delete(url).send().await?;
+        let resp: Response = if let Some(token) = &self.access_token {
+            self.client.delete(url).bearer_auth(token).send().await?
+        } else {
+            return Err(Error::Unauthorized);
+        };
+
         check_response(resp.status())?;
         tracing::info!(
             anime_id = %anime_id,

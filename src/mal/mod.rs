@@ -1,6 +1,7 @@
 mod anime;
 mod api;
 mod helpers;
+mod manga;
 mod shared;
 
 #[cfg(feature = "user")]
@@ -14,7 +15,7 @@ use crate::prelude::{Error, Result, sync};
 pub mod requests {
     pub use reqwest::header::{HeaderMap, HeaderValue};
     pub use reqwest::redirect::Policy;
-    pub use reqwest::{Client, ClientBuilder};
+    pub use reqwest::{Client, ClientBuilder, Response};
 }
 
 pub use anime::{AnimeSearchBuilder, UserAnimeBuilder};

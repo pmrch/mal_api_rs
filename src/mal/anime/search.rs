@@ -1,7 +1,8 @@
 use super::custom::{SearchConfig, SearchMode, SortOrder};
 use super::endpoints::{ANIME_ENDPOINT, RANKING_ENDPOINT, SEASONAL_ENDPOINT, SUGGESTION_ENDPOINT};
+use super::helpers::{check_response, matches_title, sort_vec};
 use super::models::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData, SeasonEnum};
-use super::{Arc, Client, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url, check_response, matches_title};
+use super::{Arc, Client, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url};
 
 pub struct AnimeSearchBuilder<'a> {
     client:        Arc<Client>,
@@ -150,7 +151,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         }
 
         let mut animes: Vec<AnimeNode> = target_query.into_iter().collect();
-        self.sort_vec(&mut animes);
+        sort_vec(&self.sorting_order, &mut animes);
 
         Ok(animes)
     }
@@ -187,7 +188,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         let mut query_data: Vec<RankingQueryData> = serde_json::from_value::<RankingQuery>(resp_val)?.data;
 
         query_data.retain(|d| self.search_filter.as_ref().is_none_or(|f| f.matches(&d.node, &self.search_mode)));
-        self.sort_vec(&mut query_data);
+        sort_vec(&self.sorting_order, &mut query_data);
 
         Ok(query_data)
     }
@@ -211,7 +212,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
 
         query_results.retain(|r| self.search_filter.as_ref().is_none_or(|f| f.matches(r.node(), &self.search_mode)));
-        self.sort_vec(&mut query_results);
+        sort_vec(&self.sorting_order, &mut query_results);
 
         Ok(query_results)
     }
@@ -240,22 +241,9 @@ impl<'a> AnimeSearchBuilder<'a> {
         let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
 
         query_results.retain(|r| self.search_filter.as_ref().is_none_or(|f| f.matches(r.node(), &self.search_mode)));
-        self.sort_vec(&mut query_results);
+        sort_vec(&self.sorting_order, &mut query_results);
 
         Ok(query_results)
-    }
-
-    /// Sort a slice of anime by the configured sort order.
-    fn sort_vec<T: HasNode>(&self, input: &mut [T]) {
-        if let Some(sort_order) = &self.sorting_order {
-            input.sort_by(|a, b| match sort_order {
-                SortOrder::Title => a.node().title.cmp(&b.node().title),
-                SortOrder::MeanScore => a.node().mean.cmp(&b.node().mean),
-                SortOrder::StartDate => a.node().start_date.cmp(&b.node().start_date),
-                SortOrder::Popularity => a.node().popularity.cmp(&b.node().popularity),
-                SortOrder::Rank => a.node().rank.cmp(&b.node().rank),
-            });
-        }
     }
 
     /// Build the complete field set for API queries.

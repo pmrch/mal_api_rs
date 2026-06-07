@@ -27,6 +27,10 @@ impl std::fmt::Display for super::api::AnimeRankingType {
     }
 }
 
+impl std::fmt::Display for super::api::Nsfw {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.as_ref()) }
+}
+
 impl std::fmt::Display for super::api::ListStatusEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

@@ -1,3 +1,6 @@
+#[cfg(feature = "user")]
+pub use crate::mal::user::{Statistics, UserInfo};
+
 pub struct SearchConfig<'a> {
     pub limit:             u32,
     pub fields:            &'a [&'a str],

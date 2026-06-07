@@ -1,4 +1,4 @@
-use super::traits::Name;
+use super::traits::{HasTitles, Name};
 
 impl super::models::SortOrder {
     #[must_use]
@@ -91,6 +91,17 @@ impl super::api::AnimeNode {
     }
 }
 
+impl AsRef<str> for super::api::Nsfw {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Black => "black",
+            Self::Gray => "gray",
+            Self::White => "white",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
 impl AsRef<str> for super::api::AnimeRankingType {
     fn as_ref(&self) -> &str {
         match self {
@@ -106,4 +117,9 @@ impl AsRef<str> for super::api::AnimeRankingType {
             Self::Unknown => "",
         }
     }
+}
+
+impl HasTitles for super::api::AnimeNode {
+    fn title(&self) -> &str { &self.title }
+    fn alternative_titles(&self) -> &Option<crate::prelude::AlternativeTitles> { &self.alternative_titles }
 }
