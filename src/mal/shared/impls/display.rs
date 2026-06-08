@@ -84,8 +84,8 @@ impl std::fmt::Display for super::api::Status {
 
 impl std::fmt::Display for super::api::MainPicture {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let parts: Vec<String> = vec![format!("\n\t{}", &self.large), format!("medium: {}", &self.medium)];
-        write!(f, "{}", parts.join("\n\t"))
+        let parts: Vec<String> = vec![format!("\n  {}", &self.large), format!("medium: {}", &self.medium)];
+        write!(f, "{}", parts.join("\n  "))
     }
 }
 

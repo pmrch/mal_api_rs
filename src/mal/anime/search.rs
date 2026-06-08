@@ -2,20 +2,20 @@ use super::custom::{SearchConfig, SearchMode, SortOrder};
 use super::endpoints::{ANIME_ENDPOINT, RANKING_ENDPOINT, SEASONAL_ENDPOINT, SUGGESTION_ENDPOINT};
 use super::helpers::{check_response, matches_title, sort_vec};
 use super::models::{Anime, AnimeNode, AnimeQuery, AnimeRankingType, RankingQuery, RankingQueryData, SeasonEnum};
-use super::{Arc, Client, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url};
+use super::{Arc, Client, CompactString, Error, HasNode, HashMap, HashSet, Response, Result, SearchFilter, Url};
 
-pub struct AnimeSearchBuilder<'a> {
+pub struct AnimeSearchBuilder {
     client:        Arc<Client>,
-    config:        SearchConfig<'a>,
+    config:        SearchConfig,
     access_token:  Option<Arc<str>>,
     sorting_order: Option<SortOrder>,
     search_filter: Option<SearchFilter>,
     search_mode:   SearchMode,
 }
 
-impl<'a> AnimeSearchBuilder<'a> {
+impl AnimeSearchBuilder {
     pub fn new(client: Arc<Client>, access_token: Option<Arc<str>>) -> Self {
-        let config: SearchConfig<'_> = SearchConfig::default();
+        let config: SearchConfig = SearchConfig::default();
 
         Self {
             client,
@@ -30,12 +30,6 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// Set the similarity threshold for title comparison with query
     pub const fn threshold(mut self, threshold: f64) -> Self {
         self.config.threshold = threshold;
-        self
-    }
-
-    /// Set the fields that should get queried and deserialized
-    pub const fn fields(mut self, fields: &'a [&'a str]) -> Self {
-        self.config.fields = fields;
         self
     }
 
@@ -83,9 +77,15 @@ impl<'a> AnimeSearchBuilder<'a> {
         self
     }
 
+    /// Set the fields that should get queried and deserialized
+    pub fn fields<S: AsRef<str>, I: Iterator<Item = S> + Clone>(mut self, fields: I) -> Self {
+        self.config.fields = fields.into_iter().map(|i| CompactString::new(i.as_ref())).collect();
+        self
+    }
+
     /// Search any number of anime by title, and set parameters of fields,
     /// number of titles, threshold, page limit
-    pub async fn search(&self, title: &'a str) -> Result<Vec<AnimeNode>> {
+    pub async fn search(&self, title: &str) -> Result<Vec<AnimeNode>> {
         let new_fields: Vec<&str> = self.build_fields();
         let query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "q" => title,
@@ -151,7 +151,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         }
 
         let mut animes: Vec<AnimeNode> = target_query.into_iter().collect();
-        sort_vec(&self.sorting_order, &mut animes);
+        sort_vec(self.sorting_order.as_ref(), &mut animes);
 
         Ok(animes)
     }
@@ -188,7 +188,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         let mut query_data: Vec<RankingQueryData> = serde_json::from_value::<RankingQuery>(resp_val)?.data;
 
         query_data.retain(|d| self.search_filter.as_ref().is_none_or(|f| f.matches(&d.node, &self.search_mode)));
-        sort_vec(&self.sorting_order, &mut query_data);
+        sort_vec(self.sorting_order.as_ref(), &mut query_data);
 
         Ok(query_data)
     }
@@ -212,7 +212,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
 
         query_results.retain(|r| self.search_filter.as_ref().is_none_or(|f| f.matches(r.node(), &self.search_mode)));
-        sort_vec(&self.sorting_order, &mut query_results);
+        sort_vec(self.sorting_order.as_ref(), &mut query_results);
 
         Ok(query_results)
     }
@@ -241,7 +241,7 @@ impl<'a> AnimeSearchBuilder<'a> {
         let mut query_results: Vec<Anime> = serde_json::from_value::<AnimeQuery>(resp_val)?.data;
 
         query_results.retain(|r| self.search_filter.as_ref().is_none_or(|f| f.matches(r.node(), &self.search_mode)));
-        sort_vec(&self.sorting_order, &mut query_results);
+        sort_vec(self.sorting_order.as_ref(), &mut query_results);
 
         Ok(query_results)
     }
@@ -249,24 +249,24 @@ impl<'a> AnimeSearchBuilder<'a> {
     /// Build the complete field set for API queries.
     ///
     /// Automatically injects required fields for sorting and filtering.
-    fn build_fields(&self) -> Vec<&'a str> {
-        let mut fields: Vec<&'a str> = self.config.fields.to_vec();
-
+    fn build_fields(&self) -> Vec<&str> {
+        let mut fields: Vec<_> = self.config.fields.clone();
         if let Some(ord) = &self.sorting_order
             && let Some(req_field) = ord.required_field()
-            && !fields.contains(&req_field)
+            && !self.config.fields.contains(&req_field)
         {
             fields.push(req_field);
         }
 
         if let Some(filter) = &self.search_filter {
             for field in &filter.required_fields {
-                if !fields.contains(field) {
+                let field: CompactString = CompactString::const_new(field);
+                if !fields.contains(&field) {
                     fields.push(field);
                 }
             }
         }
 
-        fields
+        self.config.fields.iter().map(CompactString::as_str).collect()
     }
 }

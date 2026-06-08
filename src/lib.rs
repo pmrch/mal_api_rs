@@ -1,3 +1,5 @@
+#![feature(hash_map_macro)]
+
 mod error;
 mod macros;
 mod mal;

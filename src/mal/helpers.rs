@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use compact_str::CompactString;
 use serde::Deserialize;
 
 use super::models::SortOrder;
@@ -29,7 +30,7 @@ pub(super) fn matches_title<T: HasTitles>(node: &T, title: &str, threshold: f64)
             || a_title.synonyms.iter().any(|syn| is_relevant(&title, syn, threshold))
     });
 
-    (is_relevant(title, &node.title(), threshold) && words_match) || (is_alternative_title && words_match_alt)
+    (is_relevant(title, node.title(), threshold) && words_match) || (is_alternative_title && words_match_alt)
 }
 
 pub(super) fn deserialize_date<'de, D>(deserializer: D) -> std::result::Result<Option<chrono::NaiveDate>, D::Error>
@@ -64,7 +65,7 @@ pub(super) fn check_response(status: reqwest::StatusCode) -> Result<()> {
 }
 
 /// Sort a slice of anime by the configured sort order.
-pub(super) fn sort_vec<T: HasNode>(sort_order: &Option<SortOrder>, input: &mut [T]) {
+pub(super) fn sort_vec<T: HasNode>(sort_order: Option<&SortOrder>, input: &mut [T]) {
     if let Some(sort_order) = &sort_order {
         input.sort_by(|a, b| match sort_order {
             SortOrder::Title => a.node().title.cmp(&b.node().title),
@@ -79,8 +80,8 @@ pub(super) fn sort_vec<T: HasNode>(sort_order: &Option<SortOrder>, input: &mut [
 /// Build the complete field set for API queries.
 ///
 /// Automatically injects required fields for sorting and filtering.
-pub(super) fn build_fields<'a>(fields: &'a [&'a str], sort_order: &Option<SortOrder>, filter: &Option<SearchFilter>) -> Vec<&'a str> {
-    let mut fields: Vec<&'a str> = fields.to_vec();
+pub(super) fn build_fields(fields: &[&str], sort_order: Option<&SortOrder>, filter: Option<&SearchFilter>) -> Vec<CompactString> {
+    let mut fields: Vec<CompactString> = fields.iter().map(|s| CompactString::new(s)).collect();
 
     if let Some(ord) = sort_order
         && let Some(req_field) = ord.required_field()
@@ -91,7 +92,8 @@ pub(super) fn build_fields<'a>(fields: &'a [&'a str], sort_order: &Option<SortOr
 
     if let Some(filter) = filter {
         for field in &filter.required_fields {
-            if !fields.contains(field) {
+            let field: CompactString = CompactString::const_new(field);
+            if !fields.contains(&field) {
                 fields.push(field);
             }
         }

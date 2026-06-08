@@ -5,7 +5,7 @@ mod manga;
 mod shared;
 
 #[cfg(feature = "user")]
-mod user;
+pub mod user;
 
 #[cfg(feature = "user")]
 use user::get_user_info;
@@ -29,4 +29,7 @@ pub mod models {
     #[rustfmt::skip]
     #[cfg(feature = "user")]
     pub use super::user::{Statistics, UserInfo};
+
+    pub use super::manga::api::{Manga, MangaNode, MangaRankingQueryData, MangaRankingType, MangaType};
+    pub use super::manga::manga_models::{MangaSearchBuilder, MangaSearchFilter};
 }

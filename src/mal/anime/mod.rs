@@ -3,6 +3,7 @@ mod search;
 mod update;
 mod user;
 
+use compact_str::CompactString;
 use reqwest::Response;
 use update::UpdateBuilder;
 use url::Url;

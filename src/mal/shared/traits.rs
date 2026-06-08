@@ -1,3 +1,5 @@
+use compact_str::CompactString;
+
 use super::api::{AlternativeTitles, AnimeNode};
 
 pub trait HasNode {
@@ -5,10 +7,10 @@ pub trait HasNode {
 }
 
 pub trait Name {
-    fn name(&self) -> &str;
+    fn name(&self) -> CompactString;
 }
 
 pub trait HasTitles {
     fn title(&self) -> &str;
-    fn alternative_titles(&self) -> &Option<AlternativeTitles>;
+    fn alternative_titles(&self) -> Option<&AlternativeTitles>;
 }
