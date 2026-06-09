@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub use super::filter::MangaSearchFilter;
 use super::shared_models::{AlternativeTitles, AnimeNode, Genre, MainPicture, Nsfw, Paging, Ranking};
@@ -49,6 +49,18 @@ pub struct MangaNode {
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+pub struct UserMangaListEdge {
+    pub node:        MangaNode,
+    pub list_status: MangaListStatus,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+pub struct UserMangaListQuery {
+    pub data:   Vec<UserMangaListEdge>,
+    pub paging: Paging,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 pub struct SerializationNode {
     pub id:   usize,
     pub name: CompactString,
@@ -93,33 +105,6 @@ pub struct MangaRankingQueryData {
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "snake_case")]
-pub enum MangaRankingType {
-    All,
-    Manga,
-    Novels,
-    Oneshots,
-    Doujin,
-    Manhwa,
-    Manhua,
-    Bypopularity,
-    Favorite,
-}
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "snake_case")]
-pub enum RelationType {
-    Sequel,
-    Prequel,
-    AlternativeSetting,
-    AlternativeVersion,
-    SideStory,
-    ParentStory,
-    Summary,
-    FullStory,
-}
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 pub struct MangaPictures {
     pub large:  Option<CompactString>,
     pub medium: CompactString,
@@ -157,6 +142,33 @@ pub struct MangaAuthorNode {
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
+pub enum MangaRankingType {
+    All,
+    Manga,
+    Novels,
+    Oneshots,
+    Doujin,
+    Manhwa,
+    Manhua,
+    Bypopularity,
+    Favorite,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationType {
+    Sequel,
+    Prequel,
+    AlternativeSetting,
+    AlternativeVersion,
+    SideStory,
+    ParentStory,
+    Summary,
+    FullStory,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
 pub enum MangaType {
     Oel,
     Manhua,
@@ -179,12 +191,24 @@ pub enum MangaStatus {
     Unknown,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum MangaListStatusEnum {
+    #[default]
     Reading,
     Completed,
     OnHold,
     Dropped,
     PlanToRead,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MangaQuerySort {
+    ListScore,
+    ListUpdatedAt,
+    #[default]
+    MangaTitle,
+    MangaStartDate,
+    MangaId,
 }

@@ -1,13 +1,12 @@
 use super::endpoints::MANGA_ENDPOINT;
 use super::helpers::{check_response, matches_title};
-use super::models::{Manga, MangaNode, MangaQuery, MangaRankingQuery, MangaRankingQueryData, MangaRankingType, MangaSearchFilter};
+use super::models::{MangaNode, MangaQuery, MangaRankingQuery, MangaRankingQueryData, MangaRankingType, MangaSearchFilter};
 use super::requests::{Client, Response};
 use super::shared_models::{SearchConfig, SearchMode, SortOrder};
-use super::{Arc, CompactString, HashMap, HashSet, Result, Url, my_hash_map};
+use super::{Arc, CompactString, HashMap, HashSet, MangaHasNode, Result, Url, my_hash_map};
 
 pub struct MangaSearchBuilder {
     client:        Arc<Client>,
-    access_token:  Option<Arc<str>>,
     config:        SearchConfig,
     search_mode:   SearchMode,
     search_filter: Option<MangaSearchFilter>,
@@ -16,10 +15,9 @@ pub struct MangaSearchBuilder {
 
 impl MangaSearchBuilder {
     #[must_use]
-    pub fn new(client: Arc<Client>, access_token: Option<Arc<str>>) -> Self {
+    pub fn new(client: Arc<Client>) -> Self {
         Self {
             client,
-            access_token,
             config: SearchConfig::default(),
             search_mode: SearchMode::All,
             search_filter: None,
@@ -183,7 +181,7 @@ impl MangaSearchBuilder {
     /// - Returns an error if the URL can't be parsed
     /// - Returns an error if the response status code is an error
     /// - Returns an error if deserialization fails
-    pub async fn get_details(&self, manga_id: u32) -> Result<MangaNode> {
+    pub async fn details(&self, manga_id: u32) -> Result<MangaNode> {
         let url_string: String = format!("{MANGA_ENDPOINT}/{manga_id}");
         let url: Url = Url::parse_with_params(&url_string, &std::hash_map! {"fields" => self.config.fields.join(",")})?;
         let resp: Response = self.client.get(url).send().await?;
@@ -200,7 +198,7 @@ impl MangaSearchBuilder {
     /// - Returns an error if the URL can't be parsed
     /// - Returns an error if the response status code is an error
     /// - Returns an error if deserialization fails
-    pub async fn get_ranking(&self, ranking_type: MangaRankingType) -> Result<Vec<MangaRankingQueryData>> {
+    pub async fn ranking(&self, ranking_type: MangaRankingType) -> Result<Vec<MangaRankingQueryData>> {
         let url_string: String = format!("{MANGA_ENDPOINT}/ranking");
         let params = my_hash_map! {
             "ranking_type" => ranking_type,
@@ -215,18 +213,22 @@ impl MangaSearchBuilder {
 
         let resp_val: serde_json::Value = resp.json().await?;
         let resp_obj: MangaRankingQuery = serde_json::from_value(resp_val)?;
-        Ok(resp_obj.data)
+        let mut data: Vec<MangaRankingQueryData> = resp_obj.data;
+
+        data.retain(|d| self.search_filter.as_ref().is_none_or(|f| f.matches(&d.node, &self.search_mode)));
+        self.sort_vec(&mut data);
+        Ok(data)
     }
 
     /// Sort a slice of anime by the configured sort order.
-    fn sort_vec(&self, input: &mut [MangaNode]) {
+    fn sort_vec<T: MangaHasNode>(&self, input: &mut [T]) {
         if let Some(sort_order) = &self.sorting_order {
             input.sort_by(|a, b| match sort_order {
-                SortOrder::Title => a.title.cmp(&b.title),
-                SortOrder::MeanScore => a.mean.cmp(&b.mean),
-                SortOrder::StartDate => a.start_date.cmp(&b.start_date),
-                SortOrder::Popularity => a.popularity.cmp(&b.popularity),
-                SortOrder::Rank => a.rank.cmp(&b.rank),
+                SortOrder::Title => a.node().title.cmp(&b.node().title),
+                SortOrder::MeanScore => a.node().mean.cmp(&b.node().mean),
+                SortOrder::StartDate => a.node().start_date.cmp(&b.node().start_date),
+                SortOrder::Popularity => a.node().popularity.cmp(&b.node().popularity),
+                SortOrder::Rank => a.node().rank.cmp(&b.node().rank),
             });
         }
     }

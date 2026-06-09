@@ -1,10 +1,9 @@
 use chrono::NaiveDate;
-use compact_str::CompactString;
 use serde::Deserialize;
 
 use super::models::SortOrder;
 use super::shared::traits::{HasNode, HasTitles};
-use super::{Error, Result, SearchFilter};
+use super::{Error, Result};
 
 pub(super) fn is_relevant(title: impl Into<String>, query: &str, threshold: f64) -> bool {
     strsim::jaro_winkler(&title.into().to_lowercase(), &query.to_lowercase()) >= threshold
@@ -75,29 +74,4 @@ pub(super) fn sort_vec<T: HasNode>(sort_order: Option<&SortOrder>, input: &mut [
             SortOrder::Rank => a.node().rank.cmp(&b.node().rank),
         });
     }
-}
-
-/// Build the complete field set for API queries.
-///
-/// Automatically injects required fields for sorting and filtering.
-pub(super) fn build_fields(fields: &[&str], sort_order: Option<&SortOrder>, filter: Option<&SearchFilter>) -> Vec<CompactString> {
-    let mut fields: Vec<CompactString> = fields.iter().map(|s| CompactString::new(s)).collect();
-
-    if let Some(ord) = sort_order
-        && let Some(req_field) = ord.required_field()
-        && !fields.contains(&req_field)
-    {
-        fields.push(req_field);
-    }
-
-    if let Some(filter) = filter {
-        for field in &filter.required_fields {
-            let field: CompactString = CompactString::const_new(field);
-            if !fields.contains(&field) {
-                fields.push(field);
-            }
-        }
-    }
-
-    fields
 }

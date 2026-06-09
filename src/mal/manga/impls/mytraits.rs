@@ -1,4 +1,4 @@
-use super::{CompactString, HasTitles, Name};
+use super::{CompactString, HasTitles, MangaHasNode, Name};
 
 impl HasTitles for super::models::MangaNode {
     fn title(&self) -> &str { &self.title }
@@ -28,4 +28,12 @@ impl Name for super::models::MangaRecommendation {
 
 impl Name for super::models::Serialization {
     fn name(&self) -> CompactString { self.node.name.clone() }
+}
+
+impl MangaHasNode for super::models::MangaRankingQueryData {
+    fn node(&self) -> &crate::models::MangaNode { &self.node }
+}
+
+impl MangaHasNode for super::models::MangaNode {
+    fn node(&self) -> &crate::models::MangaNode { &self }
 }

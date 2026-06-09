@@ -88,7 +88,7 @@ impl UserAnimeBuilder {
         let url_string: String = format!("{USERS_ENDPOINT}/{uname}/animelist");
         let mut query_params: HashMap<&str, compact_str::CompactString> = crate::my_hash_map! {
             "sort" => self.config.sort,
-            "limit" => self.config.limit,
+            "limit" => self.config.limit,   
             "offset" => self.config.offset
         };
 

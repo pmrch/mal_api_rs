@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     }
 
     let ranking: Vec<mal_api_rs::models::MangaRankingQueryData> =
-        api.manga().fields(["nsfw", "start_date", "rank"].iter()).limit(20).get_ranking(MangaRankingType::All).await?;
+        api.manga().fields(["nsfw", "start_date", "rank"].iter()).limit(20).ranking(MangaRankingType::All).await?;
 
     for ranked in ranking {
         println!("{ranked}");

@@ -44,18 +44,15 @@ impl MalApi {
     }
 
     #[must_use]
-    pub fn anime(&self) -> AnimeSearchBuilder {
-        AnimeSearchBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone))
-    }
+    pub fn anime(&self) -> AnimeSearchBuilder { AnimeSearchBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone)) }
 
     #[must_use]
     pub fn user_anime(&self) -> UserAnimeBuilder {
         UserAnimeBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone))
     }
 
-    pub fn manga(&self) -> MangaSearchBuilder {
-        MangaSearchBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone))
-    }
+    #[must_use]
+    pub fn manga(&self) -> MangaSearchBuilder { MangaSearchBuilder::new(self.client.clone()) }
 
     #[cfg(feature = "user")]
     /// This function retrives user informations based on user ID
