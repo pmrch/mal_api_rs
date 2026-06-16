@@ -35,5 +35,5 @@ impl MangaHasNode for super::models::MangaRankingQueryData {
 }
 
 impl MangaHasNode for super::models::MangaNode {
-    fn node(&self) -> &crate::models::MangaNode { &self }
+    fn node(&self) -> &crate::models::MangaNode { self }
 }

@@ -1,11 +1,13 @@
 mod anime;
 mod api;
 mod helpers;
-mod manga;
 mod shared;
 
 #[cfg(feature = "user")]
 pub mod user;
+
+#[cfg(feature = "manga")]
+pub mod manga;
 
 #[cfg(feature = "user")]
 use user::get_user_info;
@@ -30,6 +32,8 @@ pub mod models {
     #[cfg(feature = "user")]
     pub use super::user::{Statistics, UserInfo};
 
+    #[cfg(feature = "manga")]
     pub use super::manga::api::{Manga, MangaNode, MangaRankingQueryData, MangaRankingType, MangaType};
+    #[cfg(feature = "manga")]
     pub use super::manga::manga_models::{MangaSearchBuilder, MangaSearchFilter};
 }

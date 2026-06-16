@@ -1,3 +1,4 @@
+#[cfg(feature = "manga")]
 use super::models::MangaSearchBuilder;
 use super::requests::{Client, ClientBuilder, HeaderMap, HeaderValue, Policy};
 use super::sync::Arc;
@@ -52,6 +53,7 @@ impl MalApi {
     }
 
     #[must_use]
+    #[cfg(feature = "manga")]
     pub fn manga(&self) -> MangaSearchBuilder { MangaSearchBuilder::new(self.client.clone()) }
 
     #[cfg(feature = "user")]

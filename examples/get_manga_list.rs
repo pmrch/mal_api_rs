@@ -1,3 +1,5 @@
+#![cfg(feature = "manga")]
+
 use mal_api_rs::models::{MangaNode, MangaRankingType};
 use mal_api_rs::{MalApi, Result};
 

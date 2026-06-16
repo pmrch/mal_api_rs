@@ -1,6 +1,7 @@
 use compact_str::CompactString;
 
 use super::api::{AlternativeTitles, AnimeNode};
+#[cfg(feature = "manga")]
 use crate::mal::manga::api::MangaNode;
 
 pub trait HasNode {
@@ -11,6 +12,7 @@ pub trait Name {
     fn name(&self) -> CompactString;
 }
 
+#[cfg(feature = "manga")]
 pub trait MangaHasNode {
     fn node(&self) -> &MangaNode;
 }
