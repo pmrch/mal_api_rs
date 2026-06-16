@@ -4,7 +4,10 @@ mod helpers;
 mod shared;
 
 #[cfg(feature = "user")]
-mod user;
+pub mod user;
+
+#[cfg(feature = "manga")]
+pub mod manga;
 
 #[cfg(feature = "user")]
 use user::get_user_info;
@@ -14,7 +17,7 @@ use crate::prelude::{Error, Result, sync};
 pub mod requests {
     pub use reqwest::header::{HeaderMap, HeaderValue};
     pub use reqwest::redirect::Policy;
-    pub use reqwest::{Client, ClientBuilder};
+    pub use reqwest::{Client, ClientBuilder, Request, Response};
 }
 
 pub use anime::{AnimeSearchBuilder, UserAnimeBuilder};
@@ -28,4 +31,9 @@ pub mod models {
     #[rustfmt::skip]
     #[cfg(feature = "user")]
     pub use super::user::{Statistics, UserInfo};
+
+    #[cfg(feature = "manga")]
+    pub use super::manga::api::{Manga, MangaNode, MangaRankingQueryData, MangaRankingType, MangaType};
+    #[cfg(feature = "manga")]
+    pub use super::manga::manga_models::{MangaSearchBuilder, MangaSearchFilter};
 }

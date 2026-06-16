@@ -1,14 +1,14 @@
-use super::traits::Name;
+use super::traits::{HasTitles, Name};
 
 impl super::models::SortOrder {
     #[must_use]
-    pub const fn required_field(self) -> Option<&'static str> {
+    pub const fn required_field(self) -> Option<compact_str::CompactString> {
         match self {
             Self::Title => None, // always present
-            Self::MeanScore => Some("mean"),
-            Self::StartDate => Some("start_date"),
-            Self::Popularity => Some("popularity"),
-            Self::Rank => Some("rank"),
+            Self::MeanScore => Some(compact_str::CompactString::const_new("mean")),
+            Self::StartDate => Some(compact_str::CompactString::const_new("start_date")),
+            Self::Popularity => Some(compact_str::CompactString::const_new("popularity")),
+            Self::Rank => Some(compact_str::CompactString::const_new("rank")),
         }
     }
 }
@@ -46,10 +46,23 @@ impl super::models::EpLengthMins {
     }
 }
 
+impl std::fmt::Display for super::api::Ranking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut stuff: Vec<String> = vec![];
+
+        if let Some(prev) = self.previous_rank {
+            stuff.push(format!("\nprevious rank: {prev}"));
+        }
+
+        stuff.push(format!("current rank: {}", self.rank));
+        writeln!(f, "{}", stuff.join("\n"))
+    }
+}
+
 impl super::api::AnimeNode {
     fn join_names<T>(input: &[T]) -> String
     where T: Name {
-        input.iter().map(Name::name).collect::<Vec<&str>>().join(", ")
+        input.iter().map(Name::name).collect::<Vec<compact_str::CompactString>>().join(", ")
     }
 
     #[must_use]
@@ -91,6 +104,17 @@ impl super::api::AnimeNode {
     }
 }
 
+impl AsRef<str> for super::api::Nsfw {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Black => "black",
+            Self::Gray => "gray",
+            Self::White => "white",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
 impl AsRef<str> for super::api::AnimeRankingType {
     fn as_ref(&self) -> &str {
         match self {
@@ -106,4 +130,9 @@ impl AsRef<str> for super::api::AnimeRankingType {
             Self::Unknown => "",
         }
     }
+}
+
+impl HasTitles for super::api::AnimeNode {
+    fn title(&self) -> &str { &self.title }
+    fn alternative_titles(&self) -> Option<&crate::prelude::AlternativeTitles> { self.alternative_titles.as_ref() }
 }

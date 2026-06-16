@@ -8,7 +8,7 @@ async fn main() -> Result<()> {
     let api: MalApi = MalApi::new(None, &client_id)?;
 
     let fields: &[&str] = &["start_date", "status", "media_type", "alternative_titles"];
-    let seasonals: Vec<Anime> = api.anime().limit(500).fields(fields).seasonal(2026, SeasonEnum::Summer).await?;
+    let seasonals: Vec<Anime> = api.anime().limit(500).fields(fields.iter()).seasonal(2026, SeasonEnum::Summer).await?;
 
     println!("Got {} seasonals", seasonals.len());
     for sea in seasonals {

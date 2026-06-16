@@ -67,7 +67,7 @@ pub struct UserAnimeListQuery {
     pub paging: Paging,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash, Default)]
 pub struct AnimeNode {
     /// The identifier of this media on `MyAnimeList`.
     pub id:                 u32,
@@ -94,7 +94,7 @@ pub struct AnimeNode {
     /// The type of this media (tv, ova, movie, special, ona, music, unknown).
     pub media_type:         Option<String>,
     /// The NSFW state for this media (white, gray, black).
-    pub nsfw:               Option<String>,
+    pub nsfw:               Option<Nsfw>,
     /// The number of episodes in this anime.
     pub num_episodes:       Option<u32>,
     /// The number of users that added this media to their favorites.
@@ -199,6 +199,16 @@ pub enum Status {
     FinishedAiring,
     CurrentlyAiring,
     NotYetAired,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum Nsfw {
+    White,
+    Gray,
+    Black,
     #[serde(other)]
     Unknown,
 }

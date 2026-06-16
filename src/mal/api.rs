@@ -1,3 +1,5 @@
+#[cfg(feature = "manga")]
+use super::models::MangaSearchBuilder;
 use super::requests::{Client, ClientBuilder, HeaderMap, HeaderValue, Policy};
 use super::sync::Arc;
 use super::{AnimeSearchBuilder, Result, UserAnimeBuilder};
@@ -43,14 +45,16 @@ impl MalApi {
     }
 
     #[must_use]
-    pub fn anime(&self) -> AnimeSearchBuilder<'_> {
-        AnimeSearchBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone))
-    }
+    pub fn anime(&self) -> AnimeSearchBuilder { AnimeSearchBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone)) }
 
     #[must_use]
     pub fn user_anime(&self) -> UserAnimeBuilder {
         UserAnimeBuilder::new(self.client.clone(), self.access_token.as_ref().map(Arc::clone))
     }
+
+    #[must_use]
+    #[cfg(feature = "manga")]
+    pub fn manga(&self) -> MangaSearchBuilder { MangaSearchBuilder::new(self.client.clone()) }
 
     #[cfg(feature = "user")]
     /// This function retrives user informations based on user ID

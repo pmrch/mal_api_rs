@@ -10,7 +10,7 @@ async fn main() -> Result<()> {
 
     // Test with lots of fields
     let fields: &[&str] = &["media_type", "status", "start_date"];
-    let animes: Vec<AnimeNode> = api.anime().fields(fields).sort(SortOrder::Rank).search("Takopii no Genzai").await?;
+    let animes: Vec<AnimeNode> = api.anime().fields(fields.iter()).sort(SortOrder::Rank).search("Takopii no Genzai").await?;
     println!("{} animes match the title closely", animes.len());
 
     for anime in animes {
