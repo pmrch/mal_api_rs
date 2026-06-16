@@ -183,7 +183,7 @@ impl MangaSearchBuilder {
     /// - Returns an error if deserialization fails
     pub async fn details(&self, manga_id: u32) -> Result<MangaNode> {
         let url_string: String = format!("{MANGA_ENDPOINT}/{manga_id}");
-        let url: Url = Url::parse_with_params(&url_string, &std::hash_map! {"fields" => self.config.fields.join(",")})?;
+        let url: Url = Url::parse_with_params(&url_string, &crate::my_hash_map! {"fields" => self.config.fields.join(",")})?;
         let resp: Response = self.client.get(url).send().await?;
         check_response(resp.status())?;
 
